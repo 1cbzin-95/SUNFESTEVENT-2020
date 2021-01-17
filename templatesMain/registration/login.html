@@ -1,0 +1,15 @@
+{% extends 'base2.html' %}
+
+{% block Cprincipal %}
+
+
+    <h2>Login</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}"><!-- o django ja oferece ele guarda o valor da url e quando fasso login ja vou pra ela automaticamente-->
+        {{ form }}
+        <button type="submit">Login</button>
+    </form>
+
+
+{% endblock %}

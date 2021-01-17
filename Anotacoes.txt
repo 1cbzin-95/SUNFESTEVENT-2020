@@ -1,0 +1,223 @@
+                    ==>iniciar um projeto
+$ django-admin startproject nome_do_projeto
+OBs: se fizer o comando com . no final ele nn cria no p/diretorio
+$ django-admin startproject nome_do_projeto .    <==
+
+                    ==> rodar o projeto 
+$python3 manage.py runserver
+--------------- O que é -----------
+Views - são funçoes python3
+++ def mostrarAno(request,outroparametro) #tem que ter o request
+    retunt Httpresponse() #tem que devolver
+
+Models - são classes de base de dados
+class cliente(models.Model):#ja herda de models.Model
+   ++atributos...
+Templates -
+---------------------------
+=>criar apps
+$python3 manage.py startapp node_da_app
+1 - depois de criada a app precisamos registrar no settings do projeto
+
+=>migrates -- a medida que seu banco vai crescendo é preciso fazer as migrações de dados do db para que o django reconheça
+$python3 manage.py makemigrate #cria os arquivos de migração
+$python3 manage.py migrate  #aplica no banco
+
+                    ==> django admin
+++para acessar pela primeira vez crie o usuario
+$python3 manage.py createsuperuser
+
+
+==>Lidando com staticos
+* primeiro criar a url e caminho da pasta la no settings do projeto
++       STATIC_URL = '/static/'
++       STATICFILES_DIRS = ['estaticos']
+* para carregar usamos o loaaaad {% load static %} e no arquivo html usar a template ta{% static 'nome e diretorio' %}
+
+==>Imagens e arquivos de midia
+01 -> usar os imports la no urls do projeto
+# !1 para o django moder servir arquivos estaticos durante o desenvolvimento
++ from  django.conf import settings
++ from django.conf.urls.static import static
+
+02 ->  usar a biblioteca Pillow
+$pip3 install Pillow
+
+03 ->  primeiro criar a url e caminho da pasta la no settings do projeto para medida
++ MEDIA_URL = '/media/'
++ MEDIA_ROOT = 'midias'           //pasta para onde vai os arquivos
++ fazer a gambiarra la nas urls do projeto
+    from  django.conf import settings # !1 para o django moder servir arquivos estaticos durante o desenvolvimento
+    from django.conf.urls.static import static
++ urlpatterns = [ path()... ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+                                ==>Configurando Sistema de Loguin
+Sabendo que o django ja prover sistema de loguin com decoreitor loguin requied
+@login_required ele é importado do:
+$from django.contrib.auth.decorators import login_required
+Assim Toda função com "@loguin_required" o django nn deixa acessar se a pessoa não estiver autenticada
+1 ==> definir as urls dentro do settings que nem conf de midias
++LOGIN_REDIRECT_URL = 'home' #assim que logar, vai para essa url
++LOGOUT_REDIRECT_URL = 'home' #assim que logout, vem para essa url
+
+2 ==>  definir as urls la no "projeto" uso include
++ path('accounts/',include('django.contrib.auth.urls')),
+
+3 ==> criar pasta "registration" la no templeteGeral e dentro da pasta um loguin.html e configurar
+
+obs: quando uma pessoa esta logada o django tem uma variavel user que se vc quizer verificar se 
+o usuario esta logado basta:
+==> {% if user.is_autenticated %}
+        {{user.username}}
+        ...
+    {% endif%}
+
+4 ==> importar dentro da view que vai utilizar
++ from django.contrib.auth.decorators import login_required #conf.login
+
+
+
+
+
+
+
+
+                                ==> Django Based Views CBVs <==
+
+O que é uma forma de vc desenvolver uma aplicação usando classes , o django  te abilita uma forma 
+de vc poder reaproveitar o proprio codigo. Herdando e atigingindo muito mais conf.
+
+O FBV ==> function based view é mais comum, pq torna aplicações mais simples porem ficam com
+maior quantidade de codigo.
+
+                            ==> Classificações das mais importantes <==
+==> 01 -- Muito simples => View que tem uma url que é so um template---------------------------------
+
+from django.urls import path
+from django.views.generic.base import TemplateView
+
+urlpatterns = [
+    path('home2/',TemplateView(template_name='home2.html'),name='home2'), 
+    #obs:recebe ja um templete(html).como padrão
+    #obs:ja manda a view responder sem precisar escrever uma view ==> home2/
+]
+                            ==> onde usar <== "usar para exibir apenas para exibir um html puro"
+--passando contexto--
+
+urls.py => 
+from django.urls import path
+from .views import home_view, HomePagView
+#from django.views.generic.base import TemplateView
+
+urlpatterns = [
+    path('',home_view,name='home'),
+    path('home2', HomePagView.as_view(template_name='h2.html'),name='home2'),
+]
+views.py =>
+from django.shortcuts import render
+from django.views.generic.base import TemplateView
+
+class HomePagView(TemplateView):
+    template_name = 'home2.html' 
+    #posso tabem injetar conteudo pq ao herdar de TemplateView tenho get context data 
+    def get_context_data(self,**kwargs):
+        context = super().get_context_data(**kwargs)
+        #ele vai na super classe no context mixin pega contexto iai passa as info pra dentro,
+        #pra vc colocar o contexto -> que vai na forma de variaveis pro seu html
+        context ['minha_variavel'] = 'ola mundo da cb views'
+        return context
+
+==> 02 -- simples => Outro exemplo de view mas com definiçao de verbos de internet  ------------
+usa bibliotecas 
+from django.http import HttpResponse
+from django.views import View
+
+class myView(View):
+    def get(self,request,*args,**kwargs):
+        return HttpResponse('hellow hold')
+
+{++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++}
+from django.urls import path
+from .views import home_view, HomePagView , myView
+#from django.views.generic.base import TemplateView
+
+urlpatterns = [
+    path('',home_view,name='home'),
+    path('home2', HomePagView.as_view(template_name='h2.html'),name='home2'),
+    path('view', myView.as_view(),name='home2'),
+]
+
+==> 03 -- simples => List views - sao utilizada para fazer listagem de uma colecao de objetos------------
+usa bibliotecas 
+from django.views.generic.list import ListView
+from django.utils import timezone
+OBS:criar pasta com nome clientes dentro de templates
+class PersonList(ListView):
+    # de qual model vc utiliza.
+    model = Person   
+    #django procura para exibir o template com nome do model(em minusculo_list(person_list.html))
+    #em person_list.html o django injeta um "object_list" do tipo do model
+
+    #se quiser mudar o template_name tambem posso
+    template_name = "meu_template.html" mas por padrao nn é bom em codigos grandes
+
+
+==> 04 -- simples => Detail views -  ----------
+from django.views.generic.detail import DetailView
+from django.utils import timezone
+
+class PersonDetail(DetailView):
+    model = Person
+
+e la nas urls 
+ path('listapessoas/<int:pk>/',PersonDetail.as_view()), detalhe para passagem do id ou primarykey
+
+
+==> 05 -- simples => Creat views -  ----------
+from django.views.generic.edit import CreateView
+
+class PersonCreate(CreateView):
+    model = Person
+    fields = ['first_name','second_name','age','salary','bio' , 'photo']#todos os campos requireds
+    success_url = '/clientes/listapessoas' #depois de enviado o form  redirecione para '' 
+    #succes_url é uma funcao do redirect
+
+==> 06 -- simples => Update views -  ----------
+from django.views.generic.edit import CreateView, UpdateView
+#pra ele descobrir a propria url(caminho ate ela) pelo nome refactorando
+from django.urls import reverse_lazy
+
+lass PersonUpdate(UpdateView):
+    model = Person
+    fields = ['first_name','second_name','age','salary','bio' , 'photo']#todos os campos requireds
+    success_url = reverse_lazy('listadepessoas') #depois de enviado o form  redirecione para '' 
+    #succes_url é uma funcao do redirect
+
+==> 07 -- simples => Delete views -  ----------
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
+
+class PersonDelete(DeleteView):
+    model = Person
+    success_url = reverse_lazy('listadepessoas')
+
+
+
+
+                            ==> extenção de templates
+1 => extendo de outro html,nesse html deve ter um bloco com um nome1
+2 ==>no outro html crio  o bloco com mesmo nome1 e passo oque conteudo que vai pra la,ficar dentro
+
+
+
+
+
+
+
+
+=>requimentos para Maquina do Desenvolvedor(Programador)=>> pip3 freeze > requiriments-dev.txt <<=
+=>requimentos para Maquina de(Sdeploy)                  =>> requiriments.txt   <<=
+esse é criado manualmente e incluimos as referencias nele
+-r requiriments-dev.txt   #leia essas dependencia +
+gunicorn                  #do dajango no heroku
+psycopg2                  #do postgress
